@@ -15,16 +15,27 @@ private:
 	HANDLES m_Dif;
 	HANDLES m_Board[32][18];
 	HANDLES m_Smile;
+	HANDLES m_Home;
 
 	//update
 	UPDATE m_uSelect;
 
-
+	//각 좌표들
 	RECT m_rtClient;
+	RECT m_homeRT = {10, 10, 80, 80};
+	RECT m_SmileRT;
+	int xTime;
+	int yTime;
+
+
 	int m_nGameState;
 	int m_nScore;
-	float m_nTime;
-	WCHAR m_chScore[STRSIZE];
+	float m_fTime;
+	float m_fRecord;
+	WCHAR m_chTime[STRSIZE];
+	BOOL m_bPlaying = FALSE; //게임을 하고 있는 중인가(첫 클릭 시 TRUE로 변환
+	clock_t t_start;
+	clock_t t_finish;
 
 	int v_select = 0;
 
@@ -39,6 +50,9 @@ private:
 	int xright = 0;
 	int ytop = 0;
 	int ybottom = 0;
+
+	int level;
+	HFONT hFont, hOldFont;
 
 public:
 	Game();
@@ -69,6 +83,9 @@ public:
 	void DrawSmile();
 	void DrawDead();
 	void DrawCool();
+	void DrawHome();
+	void DrawTime();
+	void DrawFinishTime();
 
 	//update
 	BOOL UpdateCheck(UPDATE& up, DWORD tick);
@@ -93,5 +110,6 @@ public:
 	int GetFlag() const;
 	void Click(int xpos, int ypos);
 	void Reset();
+	void SetTime();
 };
 

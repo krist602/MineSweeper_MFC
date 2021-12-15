@@ -18,6 +18,10 @@ void Game::InitResource()
 	Load(m_Menu, L"image/menu.bmp");
 	Load(m_Select, L"image/select.bmp");
 	Load(m_Dif, L"image/dif.bmp");
+	Load(m_Home, L"image/home.bmp");
+
+	hFont = CreateFont(50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, L"D2Cording");
+	hOldFont = (HFONT)SelectObject(m_Base.dc, hFont);
 }
 
 void Game::InitLevel()
@@ -391,7 +395,7 @@ void Game::DrawSmile()
 {
 	int x = m_rtClient.right / 2 - 20;
 	int y = m_rtClient.bottom / 2 - Y * 15 - 60;
-
+	m_SmileRT = { m_rtClient.right / 2 - 20,m_rtClient.bottom / 2 - Y * 15 - 60 , m_rtClient.right / 2 + 20, m_rtClient.bottom / 2 - Y * 15 - 20 };
 	TransparentBlt(m_Base.dc,
 		x,
 		y,
@@ -403,6 +407,52 @@ void Game::DrawSmile()
 		m_Smile.bit.bmHeight,
 		RGB(255, 0, 255)
 	);
+	xTime = m_rtClient.right / 2 + 40;
+	yTime = m_rtClient.bottom / 2 - Y * 15 - 60;
+}
+
+void Game::DrawHome()
+{
+	int x = 10;
+	int y = 10;
+
+	TransparentBlt(m_Base.dc,
+		x,
+		y,
+		m_Home.bit.bmWidth,
+		m_Home.bit.bmHeight,
+		m_Home.dc,
+		0, 0,
+		m_Home.bit.bmWidth,
+		m_Home.bit.bmHeight,
+		RGB(255, 0, 255)
+	);
+}
+
+void Game::DrawTime()
+{
+	SetBkMode(m_Base.dc, TRANSPARENT);
+	
+
+	if (m_bPlaying == FALSE)
+	{
+		SetTextColor(m_Base.dc, RGB(0, 0, 0));//글자색 변경- 검은색
+		TextOut(m_Base.dc, xTime, yTime, L"0", 1);
+
+		SetTextColor(m_Base.dc, RGB(255, 0, 0));//글자색 변경- 빨간색
+		TextOut(m_Base.dc, xTime-2, yTime-2, L"0", 1);
+		return;
+	}
+
+	size_t size = 0;
+	wsprintf(m_chTime, L"%d", (int)(clock() - t_start) / CLOCKS_PER_SEC);
+	StringCchLength(m_chTime, STRSIZE, &size);
+
+	SetTextColor(m_Base.dc, RGB(0, 0, 0));//글자색 변경- 검은색
+	TextOut(m_Base.dc, xTime, yTime, m_chTime, (int)size);
+
+	SetTextColor(m_Base.dc, RGB(255, 0, 0));//글자색 변경- 빨간색
+	TextOut(m_Base.dc, xTime - 2, yTime - 2, m_chTime, (int)size);
 }
 
 void Game::DrawDead()
@@ -417,12 +467,17 @@ void Game::DrawCool()
 
 void Game::Click(int xpos, int ypos)
 {
-	POINT MKpt = { xpos, ypos };
-	RECT rt = { m_rtClient.right / 2 - 20,m_rtClient.bottom / 2 - Y * 15 - 60 , m_rtClient.right / 2 + 20, m_rtClient.bottom / 2 - Y * 15 - 20 };
+	if (PtInRect(&m_homeRT, { xpos, ypos }))
+	{
+		m_nGameState = TITLE;
+		return;
+	}
 
-	if (PtInRect(&rt, MKpt))
+
+	if (PtInRect(&m_SmileRT, { xpos, ypos }))
 	{
 		//Reset();
+		m_bPlaying = FALSE;
 		for (int i = 0; i < X; i++)
 			for (int j = 0; j < Y; j++)
 				board[j][i] = { 0, false };
@@ -433,16 +488,30 @@ void Game::Click(int xpos, int ypos)
 				Load(m_Board[i][j], L"image/sqaure.bmp");
 
 		InitMine();
+		return;
 	}
 	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
 		return;
 	else
+	{
+		if (m_bPlaying == FALSE)
+		{
+			m_bPlaying = TRUE;
+			t_start = clock();
+		}
 		Dig(xpos, ypos);
+	}
 }
 
 void Game::Reset()
 {
 	InitLevel();
+}
+
+void Game::SetTime()
+{
+	t_finish = clock();
+	m_fRecord = (float)(t_finish - t_start) / CLOCKS_PER_SEC;
 }
 
 void Game::Dig(int xpos, int ypos)
@@ -511,6 +580,11 @@ void Game::Flag(int xpos, int ypos)
 {
 	if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
 		return;
+	if (m_bPlaying == FALSE)
+	{
+		m_bPlaying = TRUE;
+		t_start = clock();
+	}
 	int x = 1;
 	int y = 1;
 	for (x = 1; x < X; x++)
@@ -666,19 +740,26 @@ void Game::DrawAll(HDC hdc)
 		break;
 	case GAME_EASY:
 		DrawBG();
+		DrawHome();
 		DrawSmile();
+		DrawTime();
 		DrawBoard();
 		break;
 	case GAME_NORMAL:
 		DrawBG();
+		DrawHome();
 		DrawSmile();
+		DrawTime();
 		DrawBoard();
 		break;
 	case GAME_HARD:
 		DrawBG();
+		DrawHome();
 		DrawSmile();
+		DrawTime();
 		DrawBoard();
 		break;
+
 	default:
 		break;
 	}

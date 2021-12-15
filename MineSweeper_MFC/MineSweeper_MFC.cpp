@@ -67,11 +67,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		else
 		{
 			g_Game.GameLoop(g_hdc);
-			if (g_Game.GetDig() == 0)
-			{
-				g_Game.DrawCool();
-				g_Game.DrawAll();
-			}
+			//if (g_Game.GetDig() == 0)
+			//{
+			//	//게임 클리어 시 m_nGameState를 Game_Clear로 변경하고 여깄는걸 거기로 넣어야 함
+			//	g_Game.DrawCool();
+			//	g_Game.DrawAll();
+			//}
 		}
 	}
 
