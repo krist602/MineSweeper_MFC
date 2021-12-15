@@ -70,6 +70,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			if (g_Game.GetDig() == 0)
 			{
 				g_Game.DrawCool();
+				g_Game.DrawAll();
 			}
 		}
 	}
@@ -185,7 +186,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 	case WM_LBUTTONUP: //Dig
-		g_Game.Dig(GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
+		//g_Game.Dig(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		g_Game.Click(GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
 		break;
 	case WM_RBUTTONUP:
 		g_Game.Flag(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));

@@ -18,10 +18,6 @@ void Game::InitResource()
 	Load(m_Menu, L"image/menu.bmp");
 	Load(m_Select, L"image/select.bmp");
 	Load(m_Dif, L"image/dif.bmp");
-	Load(m_Smile, L"image/smile.bmp");
-	for(int i = 0; i<32; i++)
-		for (int j = 0; j < 18; j++)
-			Load(m_Board[i][j], L"image/sqaure.bmp");
 }
 
 void Game::InitLevel()
@@ -50,10 +46,15 @@ void Game::InitLevel()
 	numFlag = 0;
 	numDig = X * Y - numMine;
 
+	for (int i = 0; i < 32; i++)
+		for (int j = 0; j < 18; j++)
+			board[j][i] = { 0, false };
+
+	Load(m_Smile, L"image/smile.bmp");
 	for (int i = 0; i < X; i++)
 		for (int j = 0; j < Y; j++)
-			board[j][i] = { 0, false };
-	
+			Load(m_Board[i][j], L"image/sqaure.bmp");
+
 	InitMine();
 
 }
@@ -134,7 +135,7 @@ void Game::InitMine()
 
 void Game::DrawBG()
 {
-	StretchBlt(m_Base.dc, 0, 0, XRES+150, YRES, m_BG.dc, 0, 0, XRES+150, YRES, SRCCOPY);
+	StretchBlt(m_Base.dc, 0, 0, XRES + 150, YRES, m_BG.dc, 0, 0, XRES + 150, YRES, SRCCOPY);
 	/*BitBlt(m_Base.dc,
 		0, 0,
 		m_BG.bit.bmWidth,
@@ -189,7 +190,7 @@ void Game::DrawSelect()
 	int y = 350 + 10 + v_select * 95;
 
 	TransparentBlt(m_Base.dc,
-		x, 
+		x,
 		y,
 		m_Select.bit.bmWidth,
 		m_Select.bit.bmHeight,
@@ -382,14 +383,14 @@ void Game::DrawNum(int x, int y)
 	default:
 		break;
 	}
-	
+
 	return;
 }
 
 void Game::DrawSmile()
 {
 	int x = m_rtClient.right / 2 - 20;
-	int y = m_rtClient.bottom/2 - Y * 15 - 60;
+	int y = m_rtClient.bottom / 2 - Y * 15 - 60;
 
 	TransparentBlt(m_Base.dc,
 		x,
@@ -401,7 +402,7 @@ void Game::DrawSmile()
 		m_Smile.bit.bmWidth,
 		m_Smile.bit.bmHeight,
 		RGB(255, 0, 255)
-		);
+	);
 }
 
 void Game::DrawDead()
@@ -412,6 +413,36 @@ void Game::DrawDead()
 void Game::DrawCool()
 {
 	Load(m_Smile, L"image/cool.bmp");
+}
+
+void Game::Click(int xpos, int ypos)
+{
+	POINT MKpt = { xpos, ypos };
+	RECT rt = { m_rtClient.right / 2 - 20,m_rtClient.bottom / 2 - Y * 15 - 60 , m_rtClient.right / 2 + 20, m_rtClient.bottom / 2 - Y * 15 - 20 };
+
+	if (PtInRect(&rt, MKpt))
+	{
+		//Reset();
+		for (int i = 0; i < X; i++)
+			for (int j = 0; j < Y; j++)
+				board[j][i] = { 0, false };
+
+		Load(m_Smile, L"image/smile.bmp");
+		for (int i = 0; i < X; i++)
+			for (int j = 0; j < Y; j++)
+				Load(m_Board[i][j], L"image/sqaure.bmp");
+
+		InitMine();
+	}
+	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
+		return;
+	else
+		Dig(xpos, ypos);
+}
+
+void Game::Reset()
+{
+	InitLevel();
 }
 
 void Game::Dig(int xpos, int ypos)
@@ -447,9 +478,9 @@ void Game::Dig(int xpos, int ypos)
 				numDig -= 1;
 			board[x][y].second = true; // 본인을 0으로 만들고
 			Load(m_Board[x][y], L"image/sqaure2.bmp");
-			for (int j = xpos - 30; j <= xpos + 30; j=j+30)
+			for (int j = xpos - 30; j <= xpos + 30; j = j + 30)
 			{
-				for (int k = ypos - 30; k <= ypos + 30; k=k+30)
+				for (int k = ypos - 30; k <= ypos + 30; k = k + 30)
 				{
 					Dig(j, k); //주위에 다시 탐색
 				}
@@ -529,7 +560,7 @@ int Game::GetFlag() const
 
 void Game::DrawAll()
 {
-		for (int x = 0; x <= X; x++)
+	for (int x = 0; x <= X; x++)
 	{
 		for (int y = 0; y <= Y; y++)
 		{
@@ -545,7 +576,7 @@ void Game::DrawAll()
 			}
 			else
 			{
-				cout << "□ ";
+				Load(m_Board[x][y], L"image/sqaureflag.bmp");
 			}
 		}
 		cout << endl;
@@ -662,7 +693,7 @@ void Game::Update()
 	case TITLE:
 		UpdateSelect();
 		break;
-	case GAME_READY: 
+	case GAME_READY:
 		break;
 	case GAME_EASY:
 		break;

@@ -91,5 +91,7 @@ public:
 	void Flag(int xpos, int ypos);
 	int GetDig() const;
 	int GetFlag() const;
+	void Click(int xpos, int ypos);
+	void Reset();
 };
 
