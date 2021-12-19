@@ -534,7 +534,7 @@ void Game::Dig(int xpos, int ypos)
 	{
 		if (board[x][y].first == -1) //-1이라면
 		{
-			//지뢰가 터진다.
+			//지뢰가 터진다. //GAME_OVER
 			Load(m_Board[x][y], L"image/sqaurebombmine.bmp");
 			board[x][y].first = -10;
 			DrawDead();
