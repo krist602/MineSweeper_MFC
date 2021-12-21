@@ -22,7 +22,7 @@ void Game::InitResource()
 
 	Load(m_Cool, L"image/cool.bmp");
 	Load(m_Dead, L"image/dead.bmp");
-	
+
 	hFont = CreateFont(50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, L"D2Cording");
 	hOldFont = (HFONT)SelectObject(m_Base.dc, hFont);
 }
@@ -79,59 +79,17 @@ void Game::InitMine()
 		else
 			board[x][y].first = -1;
 
-		if (x == 0)
+		for (int j = x - 1; j <= x + 1; j++)
 		{
-			if (y == 0)
+			for (int k = y - 1; k <= y + 1; k++)
 			{
-				for (int j = x; j <= x + 1; j++)
-				{
-					for (int k = y; k <= y + 1; k++)
-					{
-						if (board[j][k].first == -1)
-							continue;
-						else
-							board[j][k].first += 1;
-					}
-				}
-			}
-			else
-			{
-				for (int j = x; j <= x + 1; j++)
-				{
-					for (int k = y - 1; k <= y + 1; k++)
-					{
-						if (board[j][k].first == -1)
-							continue;
-						else
-							board[j][k].first += 1;
-					}
-				}
-			}
-		}
-		else if (y == 0)
-		{
-			for (int j = x - 1; j <= x + 1; j++)
-			{
-				for (int k = y; k <= y + 1; k++)
-				{
-					if (board[j][k].first == -1)
-						continue;
-					else
-						board[j][k].first += 1;
-				}
-			}
-		}
-		else
-		{
-			for (int j = x - 1; j <= x + 1; j++)
-			{
-				for (int k = y - 1; k <= y + 1; k++)
-				{
-					if (board[j][k].first == -1)
-						continue;
-					else
-						board[j][k].first += 1;
-				}
+				if (j < 0 || k < 0)
+					continue;
+
+				if (board[j][k].first == -1)
+					continue;
+				else
+					board[j][k].first += 1;
 			}
 		}
 		i++;
@@ -428,7 +386,7 @@ void Game::DrawHome()
 void Game::DrawTime()
 {
 	SetBkMode(m_Base.dc, TRANSPARENT);
-	
+
 
 	if (m_bPlaying == FALSE)
 	{
@@ -436,7 +394,7 @@ void Game::DrawTime()
 		TextOut(m_Base.dc, xTime, yTime, L"0", 1);
 
 		SetTextColor(m_Base.dc, RGB(255, 0, 0));//글자색 변경- 빨간색
-		TextOut(m_Base.dc, xTime-2, yTime-2, L"0", 1);
+		TextOut(m_Base.dc, xTime - 2, yTime - 2, L"0", 1);
 		return;
 	}
 
@@ -521,19 +479,18 @@ void Game::Click(int xpos, int ypos)
 {
 	if (PtInRect(&m_homeRT, { xpos, ypos }))
 	{
+		m_bPlaying = FALSE;
+		b_Mine = FALSE;
 		m_nGameState = TITLE;
 		return;
 	}
 
-
 	if (PtInRect(&m_SmileRT, { xpos, ypos }))
 	{
-		//Reset();
 		m_bPlaying = FALSE;
 		b_Mine = FALSE;
 		m_nGameState = level;
 		InitLevel();
-		//InitMine();
 		return;
 	}
 	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
@@ -545,15 +502,10 @@ void Game::Click(int xpos, int ypos)
 			m_bPlaying = TRUE;
 			t_start = clock();
 		}
-		if (m_nGameState == GAME_OVER || m_nGameState == GAME_CLEAR)
+		if (m_nGameState == GAME_OVER || m_nGameState == GAME_CLEAR || m_nGameState == TITLE)
 			return;
-		Dig(xpos, ypos);
+		Dig(xpos, ypos, TRUE);
 	}
-}
-
-void Game::Reset()
-{
-	InitLevel();
 }
 
 void Game::canClear()
@@ -561,13 +513,12 @@ void Game::canClear()
 	if (numDig == 0)
 	{
 		m_bPlaying = FALSE;
-		b_Cool = FALSE;
 		t_finish = clock();
 		m_nGameState = GAME_CLEAR;
 	}
 }
 
-void Game::Dig(int xpos, int ypos)
+void Game::Dig(int xpos, int ypos, bool b_Click)
 {
 	if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
 		return;
@@ -582,7 +533,20 @@ void Game::Dig(int xpos, int ypos)
 	x -= 1; //배열은 0,0 부터 시작
 	y -= 1;
 	if (board[x][y].second == true)
+	{
+		if (b_Click == TRUE && aroundFlag(x, y) == board[x][y].first)
+		{
+			for (int j = xpos - 30; j <= xpos + 30; j = j + 30)
+			{
+				for (int k = ypos - 30; k <= ypos + 30; k = k + 30)
+				{
+					Dig(j, k, false); //주위에 다시 탐색
+				}
+			}
+		}
 		return;
+	}
+
 	if (board[x][y].first <= 10)
 	{
 		if (board[x][y].first == -1) //-1이라면
@@ -592,9 +556,8 @@ void Game::Dig(int xpos, int ypos)
 			board[x][y].first = -10;
 			t_finish = clock();
 			m_bPlaying = FALSE;
-			b_Dead = FALSE;
 			m_nGameState = GAME_OVER;
-			
+
 			return;
 		}
 		else if (board[x][y].first == 0) //주위에 지뢰가 없다면
@@ -609,11 +572,11 @@ void Game::Dig(int xpos, int ypos)
 			{
 				for (int k = ypos - 30; k <= ypos + 30; k = k + 30)
 				{
-					Dig(j, k); //주위에 다시 탐색
+					Dig(j, k, false); //주위에 다시 탐색
 				}
 			}
 		}
-		else 
+		else
 		{
 			board[x][y].second = true;
 			DrawNum(x, y);
@@ -672,6 +635,23 @@ void Game::Flag(int xpos, int ypos)
 
 		return;
 	}
+}
+
+int Game::aroundFlag(int x, int y) const
+{
+	int countFlag = 0;
+	for (int i = x - 1; i <= x + 1; i++)
+	{
+		for (int j = y - 1; j <= y + 1; j++)
+		{
+			if (i < 0 || j < 0)
+				continue;
+			else if (board[i][j].first >= 100)
+				countFlag++;
+		}
+	}
+
+	return countFlag;
 }
 
 int Game::GetDig() const

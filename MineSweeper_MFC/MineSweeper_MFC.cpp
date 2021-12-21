@@ -187,7 +187,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 	case WM_LBUTTONUP: //Dig
-		//g_Game.Dig(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		//if(g_Game.GetGameState() != GAME_TITLE)
 		g_Game.Click(GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam));
 		break;
 	case WM_RBUTTONUP:

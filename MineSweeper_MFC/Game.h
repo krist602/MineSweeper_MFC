@@ -54,9 +54,7 @@ private:
 	int ybottom = 0;
 
 	BOOL b_Mine = FALSE;
-	BOOL b_Smile = FALSE;
-	BOOL b_Dead = FALSE;
-	BOOL b_Cool = FALSE;
+	//BOOL b_Click = FALSE;
 
 	int level;
 	HFONT hFont, hOldFont;
@@ -112,12 +110,13 @@ public:
 	RECT& GetRect();
 
 	//event
-	void Dig(int xpos, int ypos);
+	void Dig(int xpos, int ypos, bool b_Click);
+	void aroundDig(int xpos, int ypos);
 	void Flag(int xpos, int ypos);
 	int GetDig() const;
 	int GetFlag() const;
 	void Click(int xpos, int ypos);
-	void Reset();
 	void canClear();
+	int aroundFlag(int x, int y) const;
 };
 
