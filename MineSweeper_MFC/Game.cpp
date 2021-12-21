@@ -20,6 +20,9 @@ void Game::InitResource()
 	Load(m_Dif, L"image/dif.bmp");
 	Load(m_Home, L"image/home.bmp");
 
+	Load(m_Cool, L"image/cool.bmp");
+	Load(m_Dead, L"image/dead.bmp");
+	
 	hFont = CreateFont(50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, L"D2Cording");
 	hOldFont = (HFONT)SelectObject(m_Base.dc, hFont);
 }
@@ -52,7 +55,7 @@ void Game::InitLevel()
 
 	for (int i = 0; i < 32; i++)
 		for (int j = 0; j < 18; j++)
-			board[j][i] = { 0, false };
+			board[i][j] = { 0, false };
 
 	Load(m_Smile, L"image/smile.bmp");
 	for (int i = 0; i < X; i++)
@@ -71,13 +74,11 @@ void Game::InitMine()
 	{
 		x = rand() % X;
 		y = rand() % Y;
-		if (board[y][x].first == -1)
+		if (board[x][y].first == -1)
 			continue;
 		else
-			board[y][x].first = -1;
-		//cout << i << "번째 지뢰 : " << y << " " << x << endl;
+			board[x][y].first = -1;
 
-		//지뢰를 심은 이후에 지뢰 주위에 숫자들을 +=1을 해준다.
 		if (x == 0)
 		{
 			if (y == 0)
@@ -86,10 +87,10 @@ void Game::InitMine()
 				{
 					for (int k = y; k <= y + 1; k++)
 					{
-						if (board[k][j].first == -1)
+						if (board[j][k].first == -1)
 							continue;
 						else
-							board[k][j].first += 1;
+							board[j][k].first += 1;
 					}
 				}
 			}
@@ -99,10 +100,10 @@ void Game::InitMine()
 				{
 					for (int k = y - 1; k <= y + 1; k++)
 					{
-						if (board[k][j].first == -1)
+						if (board[j][k].first == -1)
 							continue;
 						else
-							board[k][j].first += 1;
+							board[j][k].first += 1;
 					}
 				}
 			}
@@ -113,10 +114,10 @@ void Game::InitMine()
 			{
 				for (int k = y; k <= y + 1; k++)
 				{
-					if (board[k][j].first == -1)
+					if (board[j][k].first == -1)
 						continue;
 					else
-						board[k][j].first += 1;
+						board[j][k].first += 1;
 				}
 			}
 		}
@@ -126,10 +127,10 @@ void Game::InitMine()
 			{
 				for (int k = y - 1; k <= y + 1; k++)
 				{
-					if (board[k][j].first == -1)
+					if (board[j][k].first == -1)
 						continue;
 					else
-						board[k][j].first += 1;
+						board[j][k].first += 1;
 				}
 			}
 		}
@@ -140,14 +141,6 @@ void Game::InitMine()
 void Game::DrawBG()
 {
 	StretchBlt(m_Base.dc, 0, 0, XRES + 150, YRES, m_BG.dc, 0, 0, XRES + 150, YRES, SRCCOPY);
-	/*BitBlt(m_Base.dc,
-		0, 0,
-		m_BG.bit.bmWidth,
-		m_BG.bit.bmHeight,
-		m_BG.dc,
-		0, 0,
-		SRCCOPY
-	);*/
 }
 
 void Game::DrawTitle()
@@ -317,14 +310,17 @@ void Game::SelectDif()
 	{
 	case 0:
 		m_nGameState = GAME_EASY;
+		level = m_nGameState;
 		InitLevel();
 		break;
 	case 1:
 		m_nGameState = GAME_NORMAL;
+		level = m_nGameState;
 		InitLevel();
 		break;
 	case 2:
 		m_nGameState = GAME_HARD;
+		level = m_nGameState;
 		InitLevel();
 		break;
 	}
@@ -353,7 +349,6 @@ void Game::Load(HANDLES& h, LPCWSTR name)
 	h.dc = CreateCompatibleDC(m_Base.dc);
 	h.hOldbmp = (HBITMAP)SelectObject(h.dc, h.hbmp);
 	GetObject(h.hbmp, sizeof(BITMAP), &h.bit);
-
 }
 
 RECT& Game::GetRect()
@@ -395,7 +390,7 @@ void Game::DrawSmile()
 {
 	int x = m_rtClient.right / 2 - 20;
 	int y = m_rtClient.bottom / 2 - Y * 15 - 60;
-	m_SmileRT = { m_rtClient.right / 2 - 20,m_rtClient.bottom / 2 - Y * 15 - 60 , m_rtClient.right / 2 + 20, m_rtClient.bottom / 2 - Y * 15 - 20 };
+	m_SmileRT = { x, y , x + 40, y + 40 };
 	TransparentBlt(m_Base.dc,
 		x,
 		y,
@@ -407,8 +402,9 @@ void Game::DrawSmile()
 		m_Smile.bit.bmHeight,
 		RGB(255, 0, 255)
 	);
-	xTime = m_rtClient.right / 2 + 40;
-	yTime = m_rtClient.bottom / 2 - Y * 15 - 60;
+	xTime = x + 60;
+	yTime = y;
+
 }
 
 void Game::DrawHome()
@@ -455,14 +451,70 @@ void Game::DrawTime()
 	TextOut(m_Base.dc, xTime - 2, yTime - 2, m_chTime, (int)size);
 }
 
+void Game::DrawnumFlag()
+{
+	SetBkMode(m_Base.dc, TRANSPARENT);
+
+	size_t size = 0;
+	wsprintf(m_chFlag, L"%d", (int)(numMine - numFlag));
+	StringCchLength(m_chFlag, STRSIZE, &size);
+
+	SetTextColor(m_Base.dc, RGB(0, 0, 0));//글자색 변경- 검은색
+	TextOut(m_Base.dc, xTime - 120, yTime, m_chFlag, (int)size);
+
+	SetTextColor(m_Base.dc, RGB(255, 0, 0));//글자색 변경- 빨간색
+	TextOut(m_Base.dc, xTime - 122, yTime - 2, m_chFlag, (int)size);
+}
+
+void Game::DrawFinishTime()
+{
+	SetBkMode(m_Base.dc, TRANSPARENT);
+
+	size_t size = 0;
+	wsprintf(m_chTime, L"%d", (int)(t_finish - t_start) / CLOCKS_PER_SEC);
+	StringCchLength(m_chTime, STRSIZE, &size);
+
+	SetTextColor(m_Base.dc, RGB(0, 0, 0));//글자색 변경- 검은색
+	TextOut(m_Base.dc, xTime, yTime, m_chTime, (int)size);
+
+	SetTextColor(m_Base.dc, RGB(255, 0, 0));//글자색 변경- 빨간색
+	TextOut(m_Base.dc, xTime - 2, yTime - 2, m_chTime, (int)size);
+}
+
 void Game::DrawDead()
 {
-	Load(m_Smile, L"image/dead.bmp");
+	int x = m_rtClient.right / 2 - 20;
+	int y = m_rtClient.bottom / 2 - Y * 15 - 60;
+
+	TransparentBlt(m_Base.dc,
+		x,
+		y,
+		m_Dead.bit.bmWidth + 10,
+		m_Dead.bit.bmHeight + 10,
+		m_Dead.dc,
+		0, 0,
+		m_Dead.bit.bmWidth,
+		m_Dead.bit.bmHeight,
+		RGB(255, 0, 255)
+	);
 }
 
 void Game::DrawCool()
 {
-	Load(m_Smile, L"image/cool.bmp");
+	int x = m_rtClient.right / 2 - 20;
+	int y = m_rtClient.bottom / 2 - Y * 15 - 60;
+
+	TransparentBlt(m_Base.dc,
+		x,
+		y,
+		m_Cool.bit.bmWidth + 10,
+		m_Cool.bit.bmHeight + 10,
+		m_Cool.dc,
+		0, 0,
+		m_Cool.bit.bmWidth,
+		m_Cool.bit.bmHeight,
+		RGB(255, 0, 255)
+	);
 }
 
 void Game::Click(int xpos, int ypos)
@@ -478,16 +530,10 @@ void Game::Click(int xpos, int ypos)
 	{
 		//Reset();
 		m_bPlaying = FALSE;
-		for (int i = 0; i < X; i++)
-			for (int j = 0; j < Y; j++)
-				board[j][i] = { 0, false };
-
-		Load(m_Smile, L"image/smile.bmp");
-		for (int i = 0; i < X; i++)
-			for (int j = 0; j < Y; j++)
-				Load(m_Board[i][j], L"image/sqaure.bmp");
-
-		InitMine();
+		b_Mine = FALSE;
+		m_nGameState = level;
+		InitLevel();
+		//InitMine();
 		return;
 	}
 	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
@@ -499,6 +545,8 @@ void Game::Click(int xpos, int ypos)
 			m_bPlaying = TRUE;
 			t_start = clock();
 		}
+		if (m_nGameState == GAME_OVER || m_nGameState == GAME_CLEAR)
+			return;
 		Dig(xpos, ypos);
 	}
 }
@@ -508,10 +556,15 @@ void Game::Reset()
 	InitLevel();
 }
 
-void Game::SetTime()
+void Game::canClear()
 {
-	t_finish = clock();
-	m_fRecord = (float)(t_finish - t_start) / CLOCKS_PER_SEC;
+	if (numDig == 0)
+	{
+		m_bPlaying = FALSE;
+		b_Cool = FALSE;
+		t_finish = clock();
+		m_nGameState = GAME_CLEAR;
+	}
 }
 
 void Game::Dig(int xpos, int ypos)
@@ -537,16 +590,21 @@ void Game::Dig(int xpos, int ypos)
 			//지뢰가 터진다. //GAME_OVER
 			Load(m_Board[x][y], L"image/sqaurebombmine.bmp");
 			board[x][y].first = -10;
-			DrawDead();
-			DrawMine();
+			t_finish = clock();
+			m_bPlaying = FALSE;
+			b_Dead = FALSE;
+			m_nGameState = GAME_OVER;
+			
 			return;
 		}
 		else if (board[x][y].first == 0) //주위에 지뢰가 없다면
 		{
 			if (board[x][y].second == false)
+			{
 				numDig -= 1;
-			board[x][y].second = true; // 본인을 0으로 만들고
-			Load(m_Board[x][y], L"image/sqaure2.bmp");
+				board[x][y].second = true; // 본인을 0으로 만들고
+				Load(m_Board[x][y], L"image/sqaure2.bmp");
+			}
 			for (int j = xpos - 30; j <= xpos + 30; j = j + 30)
 			{
 				for (int k = ypos - 30; k <= ypos + 30; k = k + 30)
@@ -555,22 +613,16 @@ void Game::Dig(int xpos, int ypos)
 				}
 			}
 		}
-		else //
+		else 
 		{
 			board[x][y].second = true;
 			DrawNum(x, y);
-			//Load(m_Board[x][y], L"image/sqaure2.bmp");
 			numDig -= 1;
 			return;
 		}
 	}
 	else if (board[x][y].first >= 100)
 	{
-		return;
-	}
-	else
-	{
-		//cout << "뭐야 당신 여기 어떻게 들어왔어" << endl;
 		return;
 	}
 	return;
@@ -634,78 +686,52 @@ int Game::GetFlag() const
 
 void Game::DrawAll()
 {
-	for (int x = 0; x <= X; x++)
+	if (b_Mine == TRUE)
+		return;
+
+	for (int x = 0; x < X; x++)
 	{
-		for (int y = 0; y <= Y; y++)
+		for (int y = 0; y < Y; y++)
 		{
-			//cout << board[j][i].first << " ";
 			if (board[x][y].second == true) //VISIBLE이 TRUE라면
 			{
 				if (board[x][y].first == 0)
 					Load(m_Board[x][y], L"image/sqaure2.bmp");
 				else if (board[x][y].first <= 9) //숫자는 출력
 					DrawNum(x, y);
-				else if (board[x][y].first > 100)//깃발은 *로 표시
-					Load(m_Board[x][y], L"image/sqaureflag.bmp");
 			}
 			else
 			{
 				Load(m_Board[x][y], L"image/sqaureflag.bmp");
 			}
 		}
-		cout << endl;
 	}
+
+	b_Mine = TRUE;
 }
 
 void Game::DrawMine()
 {
-	for (int x = 0; x <= X; x++)
-	{
-		for (int y = 0; y <= Y; y++)
-		{
-			if (board[x][y].first == -1) //아직 못찾은 지뢰는
-			{
-				Load(m_Board[x][y], L"image/sqauremine.bmp");
-				continue;
-			}
-			//if (board[x][y].first < -5) //밟아서 터진 지뢰는
-			//{
-			//	cout << "★ ";
-			//	continue;
-			//}
+	if (b_Mine == TRUE)
+		return;
 
+	for (int x = 0; x < X; x++)
+	{
+		for (int y = 0; y < Y; y++)
+		{
 			if (board[x][y].second == true) //VISIBLE이 TRUE라면
 			{
-				if (board[x][y].first == 0) // 0은 공란으로.
+				if (board[x][y].first >= 110)
 				{
-					cout << "   ";
-					continue;
-				}
-				else if (board[x][y].first <= 9) //숫자는 출력
-				{
-					cout << " " << board[x][y].first << " ";
-					continue;
-				}
-				else if (board[x][y].first <= 100)
-				{
-					cout << board[x][y].first << " ";
-					continue;
-				}
-				else if (board[x][y].first > 100)//깃발은 *로 표시
-				{
-					if (board[x][y].first - 110 == -1)
-						cout << "▶ ";
-					else if (board[x][y].first - 110 >= 0)
-						Load(m_Board[x][y], L"image/sqaurewrongflag.bmp");
+					Load(m_Board[x][y], L"image/sqaurewrongflag.bmp");
 				}
 			}
-			else
-			{
-				cout << "□ ";
-			}
+			else if (board[x][y].first == -1) //아직 못찾은 지뢰는
+				Load(m_Board[x][y], L"image/sqauremine.bmp");
 		}
-		cout << endl;
 	}
+
+	b_Mine = TRUE;
 }
 
 Game::Game()
@@ -742,6 +768,7 @@ void Game::DrawAll(HDC hdc)
 		DrawBG();
 		DrawHome();
 		DrawSmile();
+		DrawnumFlag();
 		DrawTime();
 		DrawBoard();
 		break;
@@ -749,6 +776,7 @@ void Game::DrawAll(HDC hdc)
 		DrawBG();
 		DrawHome();
 		DrawSmile();
+		DrawnumFlag();
 		DrawTime();
 		DrawBoard();
 		break;
@@ -756,8 +784,27 @@ void Game::DrawAll(HDC hdc)
 		DrawBG();
 		DrawHome();
 		DrawSmile();
+		DrawnumFlag();
 		DrawTime();
 		DrawBoard();
+		break;
+	case GAME_OVER:
+		DrawBG();
+		DrawHome();
+		DrawBoard();
+		DrawDead();
+		DrawMine();
+		DrawnumFlag();
+		DrawFinishTime();
+		break;
+	case GAME_CLEAR:
+		DrawBG();
+		DrawHome();
+		DrawBoard();
+		DrawCool();
+		DrawAll();
+		DrawnumFlag();
+		DrawFinishTime();
 		break;
 
 	default:
@@ -777,10 +824,13 @@ void Game::Update()
 	case GAME_READY:
 		break;
 	case GAME_EASY:
+		canClear();
 		break;
 	case GAME_NORMAL:
+		canClear();
 		break;
 	case GAME_HARD:
+		canClear();
 		break;
 	default:
 		break;
