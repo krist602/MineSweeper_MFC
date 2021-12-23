@@ -113,8 +113,6 @@ public:
 	void Dig(int xpos, int ypos, bool b_Click);
 	void aroundDig(int xpos, int ypos);
 	void Flag(int xpos, int ypos);
-	int GetDig() const;
-	int GetFlag() const;
 	void Click(int xpos, int ypos);
 	void canClear();
 	int aroundFlag(int x, int y) const;

@@ -27,7 +27,7 @@ void Game::InitResource()
 	hOldFont = (HFONT)SelectObject(m_Base.dc, hFont);
 }
 
-void Game::InitLevel()
+void Game::InitLevel() //게임 기본 세팅
 {
 	switch (m_nGameState)
 	{
@@ -66,7 +66,7 @@ void Game::InitLevel()
 
 }
 
-void Game::InitMine()
+void Game::InitMine() // 지뢰 배치
 {
 	int x = 0, y = 0;
 	srand((unsigned int)time(NULL));
@@ -475,9 +475,9 @@ void Game::DrawCool()
 	);
 }
 
-void Game::Click(int xpos, int ypos)
+void Game::Click(int xpos, int ypos) // 마우스가 클릭했을 때
 {
-	if (PtInRect(&m_homeRT, { xpos, ypos }))
+	if (PtInRect(&m_homeRT, { xpos, ypos })) // 홈버튼 클릭 시
 	{
 		m_bPlaying = FALSE;
 		b_Mine = FALSE;
@@ -485,7 +485,7 @@ void Game::Click(int xpos, int ypos)
 		return;
 	}
 
-	if (PtInRect(&m_SmileRT, { xpos, ypos }))
+	if (PtInRect(&m_SmileRT, { xpos, ypos })) // 재시작 버튼 클릭
 	{
 		m_bPlaying = FALSE;
 		b_Mine = FALSE;
@@ -493,32 +493,35 @@ void Game::Click(int xpos, int ypos)
 		InitLevel();
 		return;
 	}
-	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
+	else if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom) // 버튼들도 아니고 게임보드도 아니면 아무 일도 일어나지 않음
 		return;
 	else
 	{
-		if (m_bPlaying == FALSE)
+		if (m_nGameState == GAME_OVER || m_nGameState == GAME_CLEAR || m_nGameState == TITLE) // 게임 중이 아니라면 리턴
+			return;
+
+		if (m_bPlaying == FALSE) // 게임 중이 아니면 시간초 시작
 		{
 			m_bPlaying = TRUE;
 			t_start = clock();
 		}
-		if (m_nGameState == GAME_OVER || m_nGameState == GAME_CLEAR || m_nGameState == TITLE)
-			return;
-		Dig(xpos, ypos, TRUE);
+		
+		Dig(xpos, ypos, TRUE); // xpos, ypos를 클릭했다. TRUE = 첫 클릭일 때만.
 	}
 }
 
-void Game::canClear()
+void Game::canClear() //남은땅이 0이면 GameState를 GAME_CLEAR로 변경
 {
 	if (numDig == 0)
 	{
 		m_bPlaying = FALSE;
 		t_finish = clock();
+		numFlag = numMine;
 		m_nGameState = GAME_CLEAR;
 	}
 }
 
-void Game::Dig(int xpos, int ypos, bool b_Click)
+void Game::Dig(int xpos, int ypos, bool b_Click) 
 {
 	if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
 		return;
@@ -532,22 +535,22 @@ void Game::Dig(int xpos, int ypos, bool b_Click)
 			break;
 	x -= 1; //배열은 0,0 부터 시작
 	y -= 1;
-	if (board[x][y].second == true)
+	if (board[x][y].second == true) // 이미 밝혀진 숫자라면
 	{
-		if (b_Click == TRUE && aroundFlag(x, y) == board[x][y].first)
+		if (b_Click == TRUE && aroundFlag(x, y) == board[x][y].first) // 주변에 깃발이 현재 숫자와 똑같다면
 		{
 			for (int j = xpos - 30; j <= xpos + 30; j = j + 30)
 			{
 				for (int k = ypos - 30; k <= ypos + 30; k = k + 30)
 				{
-					Dig(j, k, false); //주위에 다시 탐색
+					Dig(j, k, false); // 주위에 전부 Dig.
 				}
 			}
 		}
 		return;
 	}
 
-	if (board[x][y].first <= 10)
+	if (board[x][y].first <= 10) // 지뢰 혹은 숫자.
 	{
 		if (board[x][y].first == -1) //-1이라면
 		{
@@ -576,26 +579,26 @@ void Game::Dig(int xpos, int ypos, bool b_Click)
 				}
 			}
 		}
-		else
+		else // 평범한 숫자라면
 		{
-			board[x][y].second = true;
+			board[x][y].second = true; 
 			DrawNum(x, y);
 			numDig -= 1;
 			return;
 		}
 	}
-	else if (board[x][y].first >= 100)
+	else if (board[x][y].first >= 100) // 깃발이라면
 	{
 		return;
 	}
 	return;
 }
 
-void Game::Flag(int xpos, int ypos)
+void Game::Flag(int xpos, int ypos) //깃발 심기.
 {
 	if (xpos<xleft || xpos>xright || ypos<ytop || ypos>ybottom)
 		return;
-	if (m_bPlaying == FALSE)
+	if (m_bPlaying == FALSE) // 게임 중이 아니었다면 시간초가 흘러간다.
 	{
 		m_bPlaying = TRUE;
 		t_start = clock();
@@ -637,7 +640,7 @@ void Game::Flag(int xpos, int ypos)
 	}
 }
 
-int Game::aroundFlag(int x, int y) const
+int Game::aroundFlag(int x, int y) const //주변 깃발을 세는 함수.
 {
 	int countFlag = 0;
 	for (int i = x - 1; i <= x + 1; i++)
@@ -652,16 +655,6 @@ int Game::aroundFlag(int x, int y) const
 	}
 
 	return countFlag;
-}
-
-int Game::GetDig() const
-{
-	return numDig;
-}
-
-int Game::GetFlag() const
-{
-	return numFlag;
 }
 
 void Game::DrawAll()
@@ -690,7 +683,7 @@ void Game::DrawAll()
 	b_Mine = TRUE;
 }
 
-void Game::DrawMine()
+void Game::DrawMine() // 게임 실패 시 지뢰를 전부 인쇄해줌
 {
 	if (b_Mine == TRUE)
 		return;
